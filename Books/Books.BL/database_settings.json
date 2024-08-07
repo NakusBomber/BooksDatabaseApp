@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=task5;Trusted_Connection=True;TrustServerCertificate=True"
+  }
+}
