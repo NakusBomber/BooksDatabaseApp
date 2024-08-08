@@ -1,4 +1,6 @@
-﻿namespace Books.BL.Helpers;
+﻿using Books.BL.Models;
+
+namespace Books.BL.Helpers;
 
 public class LineParser
 {
@@ -29,9 +31,15 @@ public class LineParser
         return _line.Split(',')[4];
     }
 
-    public DateTime GetDateTime()
+    public ExtendedDate GetDate()
     {
-        return DateTime.Parse(_line.Split(',')[3].Replace("-", "/"));
+        var date = _line.Split(',')[3];
+        if(date.Contains("BC") || date.Contains("AD"))
+        {
+            return ExtendedDate.FromCentury(date.Replace('-', '/'));
+        }
+        
+        return ExtendedDate.Parse(date.Replace('-', '/'));
     }
 
     public string GetPublisher()

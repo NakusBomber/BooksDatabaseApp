@@ -1,4 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
 
 namespace Books.BL.Models;
 
@@ -22,9 +25,10 @@ public class Book
 
     [Required]
     public Guid PublisherId { get; set; }
-    public DateTime ReleaseDate { get; set; }
 
-    public Book(string title, int pages, Guid genreId, Guid authorId, Guid publisherId, DateTime releaseDate)
+    public ExtendedDate ReleaseDate { get; set; }
+
+    public Book(string title, int pages, Guid genreId, Guid authorId, Guid publisherId)
     {
         Id = Guid.NewGuid();
         Title = title;
@@ -32,6 +36,10 @@ public class Book
         GenreId = genreId;
         AuthorId = authorId;
         PublisherId = publisherId;
+    }
+    public Book(string title, int pages, Guid genreId, Guid authorId, Guid publisherId, ExtendedDate releaseDate)
+        : this(title, pages, genreId, authorId, publisherId)
+    {
         ReleaseDate = releaseDate;
     }
 

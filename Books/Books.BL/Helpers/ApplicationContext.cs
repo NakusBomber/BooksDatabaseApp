@@ -1,4 +1,5 @@
-﻿using Books.BL.Models;
+﻿using Books.BL.Converters;
+using Books.BL.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -19,5 +20,15 @@ public class ApplicationContext : DbContext
                         .Build();
 
         optionsBuilder.UseSqlServer(config.GetConnectionString("DefaultConnection"));
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        var extendedDateConverter = new StringToExtendedDateConverter();
+
+        modelBuilder
+            .Entity<Book>()
+            .Property(b => b.ReleaseDate)
+            .HasConversion(extendedDateConverter);
     }
 }

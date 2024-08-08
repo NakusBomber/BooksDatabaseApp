@@ -21,11 +21,6 @@ public class FileParser
     {
     }
 
-    public Filter ParseFilter()
-    {
-        // TODO : create this method
-        return new Filter();
-    }
     public async Task ParseBooksAsync()
     {
         await _dbHelper.CreateConnectionAsync();
@@ -80,7 +75,7 @@ public class FileParser
             genre.Id,
             author.Id,
             publisher.Id,
-            lineParser.GetDateTime()
+            lineParser.GetDate()
         ));
     }
 
