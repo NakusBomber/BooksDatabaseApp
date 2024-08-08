@@ -34,4 +34,35 @@ public class Book
         PublisherId = publisherId;
         ReleaseDate = releaseDate;
     }
+
+    public static bool operator ==(Book a, Book b)
+    {
+        if (a is null)
+            return b is null;
+
+        return a.Equals(b);
+    }
+
+    public static bool operator !=(Book a, Book b)
+    {
+        return !(a == b);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj == null)
+            return false;
+
+        return obj is Book b
+                    ? (Title == b.Title
+                        && GenreId == b.GenreId
+                        && AuthorId == b.AuthorId
+                        && PublisherId == b.PublisherId)
+                    : false;
+    }
+
+    public override int GetHashCode()
+    {
+        return (Id, Title, Pages, GenreId, AuthorId, PublisherId, ReleaseDate).GetHashCode();
+    }
 }

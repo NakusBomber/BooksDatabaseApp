@@ -1,18 +1,9 @@
 ﻿using Books.BL;
 using Books.BL.Models;
 
-using (var db = new ApplicationContext())
-{
-    ////db.Database.EnsureCreated();
-    //db.Database.EnsureDeleted();
-    ////var harryPotter = new Book("harry potter", 500);
-    ////db.Books.Add(harryPotter);
+string path = Console.ReadLine()!.Trim('"');
 
-    ////db.SaveChanges();
+var fileParser = new FileParser(path);
+await fileParser.ParseBooksAsync();
 
-    //var books = db.Books.ToList();
-    //foreach (var item in books)
-    //{
-    //    Console.WriteLine($"{item.Id}\t{item.Title}");
-    //}
-}
+Console.WriteLine("END");
