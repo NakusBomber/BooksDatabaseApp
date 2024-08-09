@@ -7,17 +7,17 @@ using System.Data.Common;
 
 namespace Books.BL;
 
-public class FileParser
+public class FileParser : IFileParser
 {
     private ILineIterator _lineIterator;
-    private DatabaseHelper _dbHelper;
-    public FileParser(ILineIterator lineIterator)
+    private IDatabaseController _dbHelper;
+    public FileParser(ILineIterator lineIterator, IDatabaseController dbHelper)
     {
         _lineIterator = lineIterator;
         _lineIterator.GoToStart();
-        _dbHelper = new DatabaseHelper();
+        _dbHelper = dbHelper;
     }
-    public FileParser(string pathToFile) : this(new LineIterator(pathToFile))
+    public FileParser(string pathToFile) : this(new LineIterator(pathToFile), new DatabaseHelper())
     {
     }
 
@@ -66,10 +66,13 @@ public class FileParser
         var bookTitle = lineParser.GetTitle();
         var bookPages = lineParser.GetPages();
 
-        var genre = await _dbHelper.GetAndAddGenreAsync(new Genre(lineParser.GetGenre()));
-        var author = await _dbHelper.GetAndAddAuthorAsync(new Author(lineParser.GetAuthor()));
-        var publisher = await _dbHelper.GetAndAddPublisherAsync(new Publisher(lineParser.GetPublisher()));
-        var book = await _dbHelper.GetAndAddBookAsync(new Book(
+        var genre = _dbHelper.GetGenre(new Genre(lineParser.GetGenre()));
+        await _dbHelper.AddGenreAsync(genre);
+        var author = _dbHelper.GetAuthor(new Author(lineParser.GetAuthor()));
+        await _dbHelper.AddAuthorAsync(author);
+        var publisher = _dbHelper.GetPublisher(new Publisher(lineParser.GetPublisher()));
+        await _dbHelper.AddPublisherAsync(publisher);
+        var book = _dbHelper.GetBook(new Book(
             bookTitle,
             bookPages,
             genre.Id,
@@ -77,6 +80,7 @@ public class FileParser
             publisher.Id,
             lineParser.GetDate()
         ));
+        await _dbHelper.AddBookAsync(book);
     }
 
 }

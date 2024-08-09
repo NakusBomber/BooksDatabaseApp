@@ -1,10 +1,11 @@
 ﻿using Books.BL.Exceptions;
+using Books.BL.Interfaces;
 using Books.BL.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Books.BL.Helpers;
 
-public class DatabaseHelper
+public class DatabaseHelper : IDatabaseController
 {
     private ApplicationContext? _db;
 
@@ -12,6 +13,14 @@ public class DatabaseHelper
     private List<Genre>? _genres;
     private List<Author>? _authors;
     private List<Publisher>? _publishers;
+
+    public IReadOnlyList<Book> Books => _books ?? new List<Book>();
+
+    public IReadOnlyList<Genre> Genres => _genres ?? new List<Genre>();
+
+    public IReadOnlyList<Author> Authors => _authors ?? new List<Author>();
+
+    public IReadOnlyList<Publisher> Publishers => _publishers ?? new List<Publisher>();
 
     public async Task SaveChangesAsync()
     {
@@ -28,7 +37,7 @@ public class DatabaseHelper
         _publishers = await GetAllPublishersAsync();
     }
 
-    public async Task<Genre> GetAndAddGenreAsync(Genre genre)
+    public async Task<bool> AddGenreAsync(Genre genre)
     {
         ThrowIfDbNull();
 
@@ -37,20 +46,24 @@ public class DatabaseHelper
             throw new ArgumentNullException(nameof(_genres));
         }
 
-        var newGenre = (from g in _genres
-                        where genre == g
-                        select g).ToList()
-                                 .FirstOrDefault(genre);
-
-        if (newGenre.Id == genre.Id)
+        if (!_genres.Contains(genre))
         {
             _genres.Add(genre);
             await _db!.Genres.AddAsync(genre);
+            return true;
         }
-        return newGenre;
+        return false;
     }
+    public Genre GetGenre(Genre genre)
+    {
+        if (_genres == null)
+        {
+            throw new ArgumentNullException(nameof(_genres));
+        }
 
-    public async Task<Author> GetAndAddAuthorAsync(Author author)
+        return _genres.Find((g) => g == genre) ?? genre;
+    }
+    public async Task<bool> AddAuthorAsync(Author author)
     {
         ThrowIfDbNull();
 
@@ -59,20 +72,24 @@ public class DatabaseHelper
             throw new ArgumentNullException(nameof(_authors));
         }
 
-        var newAuthor = (from a in _authors
-                         where author == a
-                         select a).ToList()
-                                 .FirstOrDefault(author);
-
-        if (newAuthor.Id == author.Id)
+        if (!_authors.Contains(author))
         {
             _authors.Add(author);
             await _db!.Authors.AddAsync(author);
+            return true;
         }
-        return newAuthor;
+        return false;
     }
+    public Author GetAuthor(Author author)
+    {
+        if (_authors == null)
+        {
+            throw new ArgumentNullException(nameof(_authors));
+        }
 
-    public async Task<Publisher> GetAndAddPublisherAsync(Publisher publisher)
+        return _authors.Find((a) => a == author) ?? author;
+    }
+    public async Task<bool> AddPublisherAsync(Publisher publisher)
     {
         ThrowIfDbNull();
 
@@ -81,20 +98,24 @@ public class DatabaseHelper
             throw new ArgumentNullException(nameof(_publishers));
         }
 
-        var newPublisher = (from p in _publishers
-                            where publisher == p
-                            select p).ToList()
-                                     .FirstOrDefault(publisher);
-
-        if (newPublisher.Id == publisher.Id)
+        if (!_publishers.Contains(publisher))
         {
             _publishers.Add(publisher);
             await _db!.Publishers.AddAsync(publisher);
+            return true;
         }
-        return newPublisher;
+        return false;
     }
+    public Publisher GetPublisher(Publisher publisher)
+    {
+        if (_publishers == null)
+        {
+            throw new ArgumentNullException(nameof(_publishers));
+        }
 
-    public async Task<Book> GetAndAddBookAsync(Book book)
+        return _publishers.Find((p) => p == publisher) ?? publisher;
+    }
+    public async Task<bool> AddBookAsync(Book book)
     {
         ThrowIfDbNull();
 
@@ -103,19 +124,23 @@ public class DatabaseHelper
             throw new ArgumentNullException(nameof(_books));
         }
 
-        var newBook = (from b in _books
-                       where book == b
-                       select b).ToList()
-                                 .FirstOrDefault(book);
-
-        if (newBook.Id == book.Id)
+        if (!_books.Contains(book))
         {
             _books.Add(book);
             await _db!.Books.AddAsync(book);
+            return true;
         }
-        return newBook;
+        return false;
     }
+    public Book GetBook(Book book)
+    {
+        if (_books == null)
+        {
+            throw new ArgumentNullException(nameof(_books));
+        }
 
+        return _books.Find((b) => b == book) ?? book;
+    }
     public async Task CreateConnectionAsync()
     {
         if (_db != null)
