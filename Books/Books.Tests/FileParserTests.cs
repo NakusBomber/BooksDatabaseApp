@@ -14,14 +14,30 @@ public class FileParserTests
     [InlineData("Harper", false)]
     public async Task ParseBooksAsync_Tests(string title, bool expected)
     {
-        var db = new DatabaseMock();
-        var fileParser = new FileParser(new LineIteratorStub(linesFile), db);
+        var unitWork = new UnitOfWorkMock();
+        var fileParser = new FileParser(new LineIteratorStub(linesFile), unitWork);
         await fileParser.ParseBooksAsync();
 
-        var book = db.Books.ToList().Find((b) => b.Title == title);
+        var books = await unitWork.BookRepository.GetAllEntitiesAsync();
+        var book = books.Find((b) => b.Title == title);
         var actual = book! != null!;
 
         Assert.Equal(expected, actual);
     }
 
+    [Fact]
+    public async Task ParseBooksAsync_NoDublicatesData_Tests()
+    {
+        var unitWork = new UnitOfWorkMock();
+        var fileParser = new FileParser(new LineIteratorStub(linesFile), unitWork);
+        await fileParser.ParseBooksAsync();
+        fileParser = new FileParser(new LineIteratorStub(linesFile), unitWork);
+        await fileParser.ParseBooksAsync();
+
+        var books = await unitWork.BookRepository.GetAllEntitiesAsync();
+        var expectedCount = 2;
+        var actualCount = books.Count();
+
+        Assert.Equal(expectedCount, actualCount);
+    }
 }

@@ -7,33 +7,32 @@ using System.Data.Common;
 
 namespace Books.BL;
 
-public class FileParser : IFileParser
+public class FileParser : IFileParser, IDisposable
 {
     private ILineIterator _lineIterator;
-    private IDatabaseController _dbHelper;
-    public FileParser(ILineIterator lineIterator, IDatabaseController dbHelper)
+    private IUnitWork _unitWork;
+    private LineParser? _lineParser;
+
+    public FileParser(ILineIterator lineIterator, IUnitWork unitWork)
     {
         _lineIterator = lineIterator;
         _lineIterator.GoToStart();
-        _dbHelper = dbHelper;
+        _unitWork = unitWork;
     }
-    public FileParser(string pathToFile) : this(new LineIterator(pathToFile), new DatabaseHelper())
+    public FileParser(string pathToFile) : this(
+        new LineIterator(pathToFile), 
+        new UnitOfWork())
     {
     }
 
     public async Task ParseBooksAsync()
     {
-        await _dbHelper.CreateConnectionAsync();
-
         var line = await _lineIterator.GetNextLineAsync();
 
         if(line == null)
         {
-            await _dbHelper.CloseConnectionAsync();
             return;
         }
-
-        await _dbHelper.RunTasksAsync();
 
         do
         {
@@ -43,15 +42,18 @@ public class FileParser : IFileParser
             }
             catch (Exception)
             {
+                // Ignore this line, if error
             }
             finally
             {
                 line = await _lineIterator.GetNextLineAsync();
             }
         } while (line != null);
+    }
 
-        await _dbHelper.SaveChangesAsync();
-        await _dbHelper.CloseConnectionAsync();
+    public void Dispose()
+    {
+        _unitWork.Dispose();
     }
 
     private async Task LineProcessAsync(string line)
@@ -61,26 +63,54 @@ public class FileParser : IFileParser
             throw new ArgumentNullException("Line is null or empty");
         }
 
-        var lineParser = new LineParser(line);
+        _lineParser = new LineParser(line);
+        
+        var bookTitle = _lineParser.GetTitle();
+        var bookPages = _lineParser.GetPages();
 
-        var bookTitle = lineParser.GetTitle();
-        var bookPages = lineParser.GetPages();
+        var genre = await AddAndFindIfNeedGenre();
+        var author = await AddAndFindIfNeedAuthor();
+        var publisher = await AddAndFindIfNeedPublisher();
 
-        var genre = _dbHelper.GetGenre(new Genre(lineParser.GetGenre()));
-        await _dbHelper.AddGenreAsync(genre);
-        var author = _dbHelper.GetAuthor(new Author(lineParser.GetAuthor()));
-        await _dbHelper.AddAuthorAsync(author);
-        var publisher = _dbHelper.GetPublisher(new Publisher(lineParser.GetPublisher()));
-        await _dbHelper.AddPublisherAsync(publisher);
-        var book = _dbHelper.GetBook(new Book(
+        var book = new Book(
             bookTitle,
             bookPages,
             genre.Id,
             author.Id,
             publisher.Id,
-            lineParser.GetDate()
-        ));
-        await _dbHelper.AddBookAsync(book);
+            _lineParser.GetDate()
+        );
+        book = await _unitWork.BookRepository.FindEntityAsync(book);
+        await _unitWork.BookRepository.InsertAsync(book);
+
+        await _unitWork.SaveAsync();
     }
 
+    private async Task<Genre> AddAndFindIfNeedGenre()
+    {
+        ArgumentNullException.ThrowIfNull(nameof(_lineParser));
+
+        var genre = new Genre(_lineParser!.GetGenre());
+        genre = await _unitWork.GenreRepository.FindEntityAsync(genre);
+        await _unitWork.GenreRepository.InsertAsync(genre);
+        return genre;
+    }
+    private async Task<Author> AddAndFindIfNeedAuthor()
+    {
+        ArgumentNullException.ThrowIfNull(nameof(_lineParser));
+
+        var author = new Author(_lineParser!.GetAuthor());
+        author = await _unitWork.AuthorRepository.FindEntityAsync(author);
+        await _unitWork.AuthorRepository.InsertAsync(author);
+        return author;
+    }
+    private async Task<Publisher> AddAndFindIfNeedPublisher()
+    {
+        ArgumentNullException.ThrowIfNull(nameof(_lineParser));
+
+        var publisher = new Publisher(_lineParser!.GetPublisher());
+        publisher = await _unitWork.PublisherRepository.FindEntityAsync(publisher);
+        await _unitWork.PublisherRepository.InsertAsync(publisher);
+        return publisher;
+    }
 }
